@@ -500,6 +500,12 @@ public class Library {
   // Quick overview of the library
   public HashMap<String, Integer> quickOverview() {
     HashMap<String, Integer> overview = new HashMap<>();
+
+    overview.put("Books", bookItems.size());
+    overview.put("Users", users.size());
+    overview.put("Loans", loans.size());
+    overview.put("Overdue Loans", findOverdueLoans().size());
+
     return overview;
   }
 }

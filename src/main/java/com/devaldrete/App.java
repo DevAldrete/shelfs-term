@@ -27,7 +27,11 @@ public class App {
       switch (option) {
         case "1":
           IO.println("\nQuick Overview selected.");
+          IO.println("\n=== Quick Overview ===\n");
           HashMap<String, Integer> overview = library.quickOverview();
+          overview.forEach((k, v) -> {
+            IO.println(k + ": " + v);
+          });
           break;
         case "2":
           IO.println("\nManage Books selected.");
