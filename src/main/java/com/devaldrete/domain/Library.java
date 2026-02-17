@@ -249,7 +249,8 @@ public class Library {
     IO.println("1. Register User");
     IO.println("2. List Users");
     IO.println("3. Update User");
-    IO.println("4. Back to Main Menu");
+    IO.println("4. Upgrade User to Administrator");
+    IO.println("5. Back to Main Menu");
     String option = IO.readln("Choose an option: ");
 
     switch (option) {
@@ -259,9 +260,13 @@ public class Library {
         String username = IO.readln("Enter username: ");
         String email = IO.readln("Enter email: ");
         String password = IO.readln("Enter password: ");
+        String roleChoice = IO.readln("Enter role (1: Member, 2: Administrator): ");
+        
+        Role role = roleChoice.equals("2") ? Role.ADMINISTRATOR : Role.MEMBER;
 
-        User newUser = registerUser(username, email, password);
+        User newUser = registerUser(username, email, password, role);
         IO.println("\nUser registered successfully with ID: " + newUser.getId());
+        IO.println("Role: " + newUser.getRole());
 
         IO.println("-----------------------");
         IO.println("\nAdding new user to the library system...");
@@ -282,6 +287,7 @@ public class Library {
           IO.println("ID: " + user.getId());
           IO.println("Username: " + user.getUsername());
           IO.println("Email: " + user.getEmail());
+          IO.println("Role: " + user.getRole());
           IO.println("-----------------------");
         });
         break;
@@ -304,17 +310,38 @@ public class Library {
 
         break;
       case "4":
+        IO.println("\nUpgrade User to Administrator selected.");
+        IO.println("\n=== Upgrade User to Administrator ===\n");
+        String upgradeUserId = IO.readln("Enter User ID to upgrade: ");
+
+        boolean upgraded = upgradeUserToAdministrator(upgradeUserId);
+
+        if (upgraded) {
+          IO.println("User with ID " + upgradeUserId + " upgraded to Administrator successfully.");
+        } else {
+          IO.println("Failed to upgrade user. User not found or is already an Administrator.");
+        }
+
+        break;
+      case "5":
         IO.println("\nReturning to Main Menu.");
         break;
       default:
-        IO.println("\nInvalid option. Please select a valid option (1-3).");
+        IO.println("\nInvalid option. Please select a valid option (1-5).");
         break;
     }
   }
 
-  public User registerUser(String username, String email, String password) {
+  public User registerUser(String username, String email, String password, Role role) {
     String id = UUID.randomUUID().toString();
-    User user = new User(id, username, email, password);
+    User user;
+    
+    if (role == Role.ADMINISTRATOR) {
+      user = new Administrator(id, username, email, password);
+    } else {
+      user = new Member(id, username, email, password);
+    }
+    
     return user;
   }
 
@@ -330,6 +357,18 @@ public class Library {
   public Optional<User> findUserById(String id) {
     return users.stream()
         .filter(user -> user.getId().equals(id))
+        .findFirst();
+  }
+
+  public Optional<User> findUserByUsername(String username) {
+    return users.stream()
+        .filter(user -> user.getUsername().equals(username))
+        .findFirst();
+  }
+
+  public Optional<User> findUserByEmail(String email) {
+    return users.stream()
+        .filter(user -> user.getEmail().equals(email))
         .findFirst();
   }
 
@@ -355,6 +394,35 @@ public class Library {
     user.setUsername(username);
     user.setEmail(email);
     user.setPassword(password);
+    return true;
+  }
+
+  public boolean upgradeUserToAdministrator(String userId) {
+    Optional<User> userOpt = findUserById(userId);
+    if (userOpt.isEmpty()) {
+      return false;
+    }
+
+    User oldUser = userOpt.get();
+    
+    // Check if already an administrator
+    if (oldUser instanceof Administrator) {
+      return false;
+    }
+
+    // Remove old user
+    users.removeIf(user -> user.getId().equals(userId));
+
+    // Create new Administrator with same credentials
+    Administrator newAdmin = new Administrator(
+        oldUser.getId(),
+        oldUser.getUsername(),
+        oldUser.getEmail(),
+        oldUser.getPassword()
+    );
+
+    // Add new administrator
+    users.add(newAdmin);
     return true;
   }
 
@@ -495,6 +563,32 @@ public class Library {
     return loans.stream()
         .filter(loan -> loan.getDueDate().isBefore(now))
         .collect(Collectors.toList());
+  }
+
+  // RBAC-aware methods
+  public List<Loan> getAccessibleLoans(User user) {
+    if (user instanceof Administrator) {
+      return findAllLoans();
+    } else if (user instanceof Member) {
+      return findLoansByUserId(user.getId());
+    }
+    return new ArrayList<>();
+  }
+
+  public boolean canManageUsers(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canManageBooks(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canViewAllLoans(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canUpgradeUserRole(User user) {
+    return user instanceof Administrator;
   }
 
   // Quick overview of the library

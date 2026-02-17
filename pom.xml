@@ -8,6 +8,9 @@
   <name>shelfs-demo</name>
   <url>http://maven.apache.org</url>
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
     <exec.mainClass>com.devaldrete.App</exec.mainClass>
   </properties>
   <dependencies>
