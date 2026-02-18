@@ -45,3 +45,6 @@ buildNumber.properties
 # AI
 AGENTS.md
 SKILLS.md
+
+# Temporal files
+tmp/

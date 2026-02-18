@@ -3,7 +3,7 @@ package com.devaldrete;
 import java.util.HashMap;
 
 import com.devaldrete.domain.Administrator;
-import com.devaldrete.domain.AuthService;
+import com.devaldrete.services.AuthService;
 import com.devaldrete.domain.Library;
 import com.devaldrete.domain.Member;
 import com.devaldrete.domain.Role;

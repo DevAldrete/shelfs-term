@@ -1,7 +1,13 @@
-package com.devaldrete.domain;
+package com.devaldrete.services;
 
 import java.util.Optional;
 import java.util.UUID;
+
+import com.devaldrete.domain.Administrator;
+import com.devaldrete.domain.Library;
+import com.devaldrete.domain.Member;
+import com.devaldrete.domain.Role;
+import com.devaldrete.domain.User;
 
 public class AuthService {
   private Library library;
