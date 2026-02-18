@@ -69,6 +69,22 @@ public class BookService {
     return bookRepository.findByISBN(isbn);
   }
 
+  public List<BookDefinition> findByTitle(String title) {
+    return bookRepository.findByTitle(title);
+  }
+
+  public List<BookDefinition> findByAuthor(String author) {
+    return bookRepository.findByAuthor(author);
+  }
+
+  public List<BookItem> getAllItemsForDefinition(String bookDefId) {
+    return bookRepository.getByBookDefinitionId(bookDefId);
+  }
+
+  public BookDefinition findDefinitionById(String id) {
+    return bookRepository.getBookDefinitionById(id);
+  }
+
   public BookItem findByBarcode(String barcode) {
     return bookRepository.findByBarcode(barcode);
   }
@@ -99,5 +115,27 @@ public class BookService {
 
   public int countDefinitions() {
     return bookRepository.getAllBookDefinitions().size();
+  }
+
+  // --- Persistence helpers ---
+
+  public List<BookItem> getAllItems() {
+    return bookRepository.getAll();
+  }
+
+  /**
+   * Persists a fully-constructed BookDefinition directly (used by
+   * PersistenceService when loading from disk).
+   */
+  public void saveDefinition(BookDefinition def) {
+    bookRepository.saveBookDefinition(def);
+  }
+
+  /**
+   * Persists a fully-constructed BookItem directly (used by
+   * PersistenceService when loading from disk).
+   */
+  public void saveItem(BookItem item) {
+    bookRepository.save(item);
   }
 }

@@ -1,5 +1,7 @@
 package com.devaldrete;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 import com.devaldrete.domain.Administrator;
@@ -8,6 +10,7 @@ import com.devaldrete.domain.User;
 import com.devaldrete.repositories.PermissionRepository;
 import com.devaldrete.services.AuthService;
 import com.devaldrete.services.Library;
+import com.devaldrete.services.PersistenceService;
 
 public class App {
 
@@ -21,15 +24,27 @@ public class App {
     // AuthService shares the Library's UserService so all users are in one store
     AuthService authService = new AuthService(library.getUserService(), new PermissionRepository());
 
-    // Seed default admin (ID "0" is stable so it can be referenced in tests/docs)
-    library.addUser(new Administrator("0", "admin", "admin@example.com", "passwordsafe"));
+    PersistenceService persistence = new PersistenceService();
 
-    // Seed sample members
-    library.addUser(new Member("1", "john", "john@example.com", "password123"));
-    library.addUser(new Member("2", "anna", "anna@example.com", "password123"));
-    library.addUser(new Member("3", "scarlet", "scarlet@example.com", "password123"));
-    library.addUser(new Member("4", "nathan", "nathan@example.com", "password123"));
-    library.addUser(new Member("5", "magnus", "magnus@example.com", "password123"));
+    // Load persisted data if it exists; otherwise seed defaults
+    if (Files.exists(Paths.get("data/users.json"))) {
+      IO.println("Loading saved data...");
+      persistence.loadAll(
+          library.getUserService(),
+          library.getBookService(),
+          library.getLoanService());
+      IO.println("Data loaded.");
+    } else {
+      // Seed default admin (ID "0" is stable so it can be referenced in tests/docs)
+      library.addUser(new Administrator("0", "admin", "admin@example.com", "passwordsafe"));
+
+      // Seed sample members
+      library.addUser(new Member("1", "john", "john@example.com", "password123"));
+      library.addUser(new Member("2", "anna", "anna@example.com", "password123"));
+      library.addUser(new Member("3", "scarlet", "scarlet@example.com", "password123"));
+      library.addUser(new Member("4", "nathan", "nathan@example.com", "password123"));
+      library.addUser(new Member("5", "magnus", "magnus@example.com", "password123"));
+    }
 
     // --- Authentication loop ---
     while (!authService.isAuthenticated()) {
@@ -72,13 +87,14 @@ public class App {
       IO.println("\n=== Menu: Shelfs (Logged in as: " + currentUser.getUsername()
           + " [" + currentUser.getRole() + "]) ===\n");
       IO.println("1. Quick Overview");
-      IO.println("2. Manage Books");
-      IO.println("3. Manage Users");
-      IO.println("4. Manage Loans");
-      IO.println("5. Logout");
-      IO.println("6. Exit");
+      IO.println("2. Browse Books");
+      IO.println("3. Manage Books  (admin)");
+      IO.println("4. Manage Users  (admin)");
+      IO.println("5. Manage Loans");
+      IO.println("6. Logout");
+      IO.println("7. Exit");
 
-      String option = IO.readln("\nSelect an option (1-6): ");
+      String option = IO.readln("\nSelect an option (1-7): ");
 
       switch (option) {
         case "1":
@@ -88,6 +104,10 @@ public class App {
           break;
 
         case "2":
+          library.browseBooks();
+          break;
+
+        case "3":
           // Middleware guard: only Administrators can manage books
           if (authService.requireAdmin()) {
             library.manageBooks();
@@ -96,7 +116,7 @@ public class App {
           }
           break;
 
-        case "3":
+        case "4":
           // Middleware guard: only Administrators can manage users
           if (authService.requireAdmin()) {
             library.manageUsers();
@@ -105,24 +125,35 @@ public class App {
           }
           break;
 
-        case "4":
+        case "5":
           // Loan management is role-aware inside manageLoans()
           library.manageLoans(currentUser);
           break;
 
-        case "5":
+        case "6":
+          IO.println("\nSaving data...");
+          persistence.saveAll(
+              library.getUserService(),
+              library.getBookService(),
+              library.getLoanService());
           IO.println("\nLogging out...");
           authService.logout();
           IO.println("Logged out successfully.");
           running = false; // Exit main loop — re-enter auth loop on next iteration
           break;
 
-        case "6":
+        case "7":
+          IO.println("\nSaving data...");
+          persistence.saveAll(
+              library.getUserService(),
+              library.getBookService(),
+              library.getLoanService());
           IO.println("\nExiting the application. Goodbye!");
           System.exit(0);
+          break;
 
         default:
-          IO.println("Invalid option. Please select a valid option (1-6).");
+          IO.println("Invalid option. Please select a valid option (1-7).");
           break;
       }
 

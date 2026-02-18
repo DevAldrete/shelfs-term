@@ -130,6 +130,24 @@ public class BookRepository extends BaseRepository<BookItem> {
         .orElse(null);
   }
 
+  public List<BookDefinition> findByTitle(String title) {
+    validateNotEmpty(title, "Title");
+
+    String lower = title.toLowerCase();
+    return bookDefinitions.stream()
+        .filter(bd -> bd.getTitle().toLowerCase().contains(lower))
+        .toList();
+  }
+
+  public List<BookDefinition> findByAuthor(String author) {
+    validateNotEmpty(author, "Author");
+
+    String lower = author.toLowerCase();
+    return bookDefinitions.stream()
+        .filter(bd -> bd.getAuthor().toLowerCase().contains(lower))
+        .toList();
+  }
+
   @Override
   protected String getId(BookItem item) {
     validateNotNull(item, "BookItem");

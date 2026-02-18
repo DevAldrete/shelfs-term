@@ -58,10 +58,18 @@ public class Library {
     this.address = address;
   }
 
-  // --- Service accessors (used by AuthService to share the UserService) ---
+  // --- Service accessors ---
 
   public UserService getUserService() {
     return userService;
+  }
+
+  public BookService getBookService() {
+    return bookService;
+  }
+
+  public LoanService getLoanService() {
+    return loanService;
   }
 
   // --- RBAC helpers ---
@@ -442,7 +450,109 @@ public class Library {
     IO.println("(Not yet implemented)");
   }
 
+  // --- Member book browsing ---
+
+  /**
+   * Interactive book-browsing menu available to all authenticated users.
+   * Allows searching by title, author, or ISBN and viewing all copies with
+   * their barcodes and availability status.
+   */
+  public void browseBooks() {
+    IO.println("\n=== Browse Books ===\n");
+    IO.println("1. Search by Title");
+    IO.println("2. Search by Author");
+    IO.println("3. Search by ISBN");
+    IO.println("4. List All Books");
+    IO.println("5. Back to Main Menu");
+    String option = IO.readln("Choose an option: ");
+
+    switch (option) {
+      case "1": {
+        String query = IO.readln("Enter title (partial match): ");
+        List<BookDefinition> results = bookService.findByTitle(query);
+        if (results.isEmpty()) {
+          IO.println("No books found matching \"" + query + "\".");
+        } else {
+          IO.println("\nFound " + results.size() + " result(s):\n");
+          for (BookDefinition def : results) {
+            printBookWithCopies(def);
+          }
+        }
+        break;
+      }
+
+      case "2": {
+        String query = IO.readln("Enter author (partial match): ");
+        List<BookDefinition> results = bookService.findByAuthor(query);
+        if (results.isEmpty()) {
+          IO.println("No books found for author \"" + query + "\".");
+        } else {
+          IO.println("\nFound " + results.size() + " result(s):\n");
+          for (BookDefinition def : results) {
+            printBookWithCopies(def);
+          }
+        }
+        break;
+      }
+
+      case "3": {
+        String isbn = IO.readln("Enter ISBN: ");
+        BookDefinition def = bookService.findByISBN(isbn);
+        if (def == null) {
+          IO.println("No book found with ISBN \"" + isbn + "\".");
+        } else {
+          printBookWithCopies(def);
+        }
+        break;
+      }
+
+      case "4": {
+        List<BookDefinition> allDefs = bookService.getAllDefinitions();
+        if (allDefs.isEmpty()) {
+          IO.println("No books in the library.");
+        } else {
+          IO.println("\n" + allDefs.size() + " book title(s) in the library:\n");
+          for (BookDefinition def : allDefs) {
+            printBookWithCopies(def);
+          }
+        }
+        break;
+      }
+
+      case "5":
+        IO.println("\nReturning to Main Menu.");
+        break;
+
+      default:
+        IO.println("\nInvalid option. Please select a valid option (1-5).");
+        break;
+    }
+  }
+
   // --- Helpers ---
+
+  /**
+   * Prints a book definition together with all its physical copies, their
+   * barcodes and current availability status.
+   */
+  private void printBookWithCopies(BookDefinition def) {
+    IO.println("Title     : " + def.getTitle());
+    IO.println("Author    : " + def.getAuthor());
+    IO.println("ISBN      : " + def.getIsbn());
+    IO.println("Publisher : " + def.getPublisher());
+    IO.println("ID        : " + def.getId());
+
+    List<BookItem> copies = bookService.getAllItemsForDefinition(def.getId());
+    if (copies.isEmpty()) {
+      IO.println("Copies    : none");
+    } else {
+      IO.println("Copies (" + copies.size() + "):");
+      for (BookItem item : copies) {
+        IO.println("  Barcode: " + item.getBarcode() + "  |  Status: " + item.getStatus());
+      }
+    }
+    IO.println("-----------------------");
+  }
 
   private void printLoans(List<Loan> loans) {
     if (loans.isEmpty()) {
@@ -450,10 +560,20 @@ public class Library {
       return;
     }
     for (Loan loan : loans) {
-      IO.println("Loan ID: " + loan.getId()
-          + " | User ID: " + loan.getUserId()
-          + " | Book ID: " + loan.getBookId()
-          + " | Due: " + loan.getDueDate());
+      BookItem item = bookService.findById(loan.getBookId());
+      String barcode = item != null ? item.getBarcode() : "(unknown)";
+      String title = "(unknown)";
+      if (item != null) {
+        BookDefinition def = bookService.findDefinitionById(item.getBookDefId());
+        if (def != null) {
+          title = def.getTitle() + " by " + def.getAuthor();
+        }
+      }
+      IO.println("Loan ID : " + loan.getId());
+      IO.println("Book    : " + title);
+      IO.println("Barcode : " + barcode);
+      IO.println("User ID : " + loan.getUserId());
+      IO.println("Due     : " + loan.getDueDate());
       IO.println("-----------------------");
     }
   }

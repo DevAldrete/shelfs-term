@@ -91,4 +91,12 @@ public class LoanService {
   public int count() {
     return loanRepository.count();
   }
+
+  /**
+   * Persists a fully-constructed Loan directly (used by PersistenceService
+   * when loading from disk; bypasses all business-logic guards).
+   */
+  public void saveLoan(Loan loan) {
+    loanRepository.save(loan);
+  }
 }
