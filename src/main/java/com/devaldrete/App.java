@@ -2,8 +2,10 @@ package com.devaldrete;
 
 import java.util.HashMap;
 
+import com.devaldrete.domain.Administrator;
 import com.devaldrete.domain.AuthService;
 import com.devaldrete.domain.Library;
+import com.devaldrete.domain.Member;
 import com.devaldrete.domain.Role;
 import com.devaldrete.domain.User;
 
@@ -15,6 +17,17 @@ public class App {
   public static void main(String[] args) {
     IO.println("Welcome to the Shelfs");
     IO.println("The lightweight library management system");
+
+    // Default admin user
+    User adminUser = new Administrator("0", "admin", "admin@example.com", "passwordsafe");
+    library.addUser(adminUser);
+
+    // Populate library with sample users
+    library.addUser(new Member("1", "john", "john@example.com", "password123"));
+    library.addUser(new Member("2", "anna", "anna@example.com", "password123"));
+    library.addUser(new Member("3", "scarlet", "scarlet@example.com", "password123"));
+    library.addUser(new Member("4", "nathan", "nathan@example.com", "password123"));
+    library.addUser(new Member("5", "magnus", "magnus@example.com", "password123"));
 
     // Authentication loop
     while (!authService.isAuthenticated()) {
@@ -122,9 +135,8 @@ public class App {
     String username = IO.readln("Enter username: ");
     String email = IO.readln("Enter email: ");
     String password = IO.readln("Enter password: ");
-    String roleChoice = IO.readln("Enter role (1: Member, 2: Administrator): ");
 
-    Role role = roleChoice.equals("2") ? Role.ADMINISTRATOR : Role.MEMBER;
+    Role role = Role.MEMBER; // Default role for new users
 
     try {
       User newUser = authService.signup(username, email, password, role);
