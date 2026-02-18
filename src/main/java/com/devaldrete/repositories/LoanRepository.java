@@ -2,6 +2,7 @@ package com.devaldrete.repositories;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.Instant;
 
 import com.devaldrete.domain.Loan;
 
@@ -19,11 +20,15 @@ import com.devaldrete.domain.Loan;
  * - Throws IllegalStateException when attempting invalid state transitions
  */
 public class LoanRepository extends BaseRepository<Loan> {
+
+  private List<Loan> loans;
+
   /**
    * Constructs a new LoanRepository with an empty loan collection.
    */
   public LoanRepository() {
     super();
+    this.loans = new ArrayList<>();
   }
 
   /**
@@ -42,7 +47,7 @@ public class LoanRepository extends BaseRepository<Loan> {
       throw new IllegalArgumentException("Loan with ID " + item.getId() + " already exists");
     }
 
-    getAll().add(item);
+    loans.add(item);
   }
 
   /**
@@ -61,9 +66,9 @@ public class LoanRepository extends BaseRepository<Loan> {
       throw new IllegalStateException("Cannot update: Loan with ID " + item.getId() + " does not exist");
     }
 
-    for (int i = 0; i < getAll().size(); i++) {
-      if (getAll().get(i).getId().equals(item.getId())) {
-        getAll().set(i, item);
+    for (int i = 0; i < loans.size(); i++) {
+      if (loans.get(i).getId().equals(item.getId())) {
+        loans.set(i, item);
         return;
       }
     }
@@ -85,7 +90,7 @@ public class LoanRepository extends BaseRepository<Loan> {
       throw new IllegalStateException("Cannot delete: Loan with ID " + id + " does not exist");
     }
 
-    getAll().removeIf(loan -> loan.getId().equals(id));
+    loans.removeIf(loan -> loan.getId().equals(id));
   }
 
   /**
@@ -113,15 +118,9 @@ public class LoanRepository extends BaseRepository<Loan> {
    */
   @Override
   public List<Loan> getAll() {
-    return new ArrayList<>(getAll());
+    return new ArrayList<>(loans);
   }
 
-  /**
-   * Extracts the ID from a loan entity.
-   * 
-   * @param item the loan to extract ID from. Must not be null.
-   * @return the unique identifier of the loan
-   */
   @Override
   protected String getId(Loan item) {
     validateNotNull(item, "Loan");
@@ -141,5 +140,25 @@ public class LoanRepository extends BaseRepository<Loan> {
 
     return getAll().stream()
         .anyMatch(loan -> loan.getId().equals(id));
+  }
+
+  public List<Loan> findByUserId(String userId) {
+    validateNotEmpty(userId, "User ID");
+
+    return loans.stream()
+        .filter(loan -> loan.getUserId().equals(userId))
+        .toList();
+  }
+
+  public List<Loan> findOverdue() {
+    Instant now = Instant.now();
+
+    return loans.stream()
+        .filter(loan -> loan.getDueDate().isBefore(now))
+        .toList();
+  }
+
+  public int count() {
+    return loans.size();
   }
 }

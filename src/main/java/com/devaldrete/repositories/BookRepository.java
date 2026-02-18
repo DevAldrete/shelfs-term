@@ -112,6 +112,24 @@ public class BookRepository extends BaseRepository<BookItem> {
         .toList();
   }
 
+  public BookItem findByBarcode(String barcode) {
+    validateNotEmpty(barcode, "Barcode");
+
+    return bookItems.stream()
+        .filter(bi -> bi.getBarcode().equalsIgnoreCase(barcode))
+        .findFirst()
+        .orElse(null);
+  }
+
+  public BookDefinition findByISBN(String isbn) {
+    validateNotEmpty(isbn, "ISBN");
+
+    return bookDefinitions.stream()
+        .filter(bd -> bd.getIsbn().equals(isbn))
+        .findFirst()
+        .orElse(null);
+  }
+
   @Override
   protected String getId(BookItem item) {
     validateNotNull(item, "BookItem");
