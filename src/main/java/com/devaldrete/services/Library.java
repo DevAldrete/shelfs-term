@@ -1,5 +1,6 @@
 package com.devaldrete.services;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,6 +8,7 @@ import com.devaldrete.domain.Administrator;
 import com.devaldrete.domain.BookDefinition;
 import com.devaldrete.domain.BookItem;
 import com.devaldrete.domain.Loan;
+import com.devaldrete.domain.Member;
 import com.devaldrete.domain.Role;
 import com.devaldrete.domain.User;
 
@@ -16,18 +18,22 @@ public class Library {
   private String name;
   private String address;
 
-  private BookService bookService;
-  private UserService userService;
-  private LoanService loanService;
+  private final BookService bookService;
+  private final UserService userService;
+  private final LoanService loanService;
 
-  public Library(String name, String address,
-      BookService bookService, UserService userService, LoanService loanService) {
+  /**
+   * Creates the library and wires the shared service instances so that all
+   * three services operate on the same in-memory data stores.
+   */
+  public Library(String name, String address) {
     this.id = UUID.randomUUID().toString();
     this.name = name;
     this.address = address;
-    this.bookService = bookService;
-    this.userService = userService;
-    this.loanService = loanService;
+    this.bookService = new BookService();
+    this.userService = new UserService();
+    // Inject shared services into LoanService so it sees the same users/books
+    this.loanService = new LoanService(userService, bookService);
   }
 
   // --- Getters / Setters ---
@@ -50,6 +56,91 @@ public class Library {
 
   public void setAddress(String address) {
     this.address = address;
+  }
+
+  // --- Service accessors (used by AuthService to share the UserService) ---
+
+  public UserService getUserService() {
+    return userService;
+  }
+
+  // --- RBAC helpers ---
+
+  public boolean canManageBooks(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canManageUsers(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canViewAllLoans(User user) {
+    return user instanceof Administrator;
+  }
+
+  public boolean canUpgradeUserRole(User user) {
+    return user instanceof Administrator;
+  }
+
+  // --- User delegation ---
+
+  /**
+   * Saves a pre-constructed User directly (used for seeding initial data).
+   */
+  public void addUser(User user) {
+    userService.save(user);
+  }
+
+  // --- Loan delegation ---
+
+  public Loan loanBook(String userId, String barcode) {
+    return loanService.loanBook(userId, barcode);
+  }
+
+  public boolean returnBook(String loanId) {
+    return loanService.returnBook(loanId);
+  }
+
+  public List<Loan> findAllLoans() {
+    return loanService.getAll();
+  }
+
+  public List<Loan> findLoansByUserId(String userId) {
+    return loanService.getByUserId(userId);
+  }
+
+  public List<Loan> findOverdueLoans() {
+    return loanService.getOverdue();
+  }
+
+  /**
+   * Returns the loans accessible to the given user:
+   * - Administrators see all loans.
+   * - Members see only their own loans.
+   */
+  public List<Loan> getAccessibleLoans(User user) {
+    if (user instanceof Administrator) {
+      return loanService.getAll();
+    }
+    if (user instanceof Member) {
+      return ((Member) user).getAccessibleLoans(loanService.getAll());
+    }
+    return List.of();
+  }
+
+  // --- Quick overview ---
+
+  /**
+   * Returns a summary of library counts keyed by label.
+   */
+  public HashMap<String, Integer> quickOverview() {
+    HashMap<String, Integer> overview = new HashMap<>();
+    overview.put("Book titles", bookService.countDefinitions());
+    overview.put("Book items", bookService.countItems());
+    overview.put("Users", userService.count());
+    overview.put("Active loans", loanService.count());
+    overview.put("Overdue loans", loanService.getOverdue().size());
+    return overview;
   }
 
   // --- Book menu ---
@@ -337,17 +428,6 @@ public class Library {
         IO.println("\nInvalid option.");
         break;
     }
-  }
-
-  // --- Quick overview ---
-
-  public void quickOverview() {
-    IO.println("\n=== Quick Overview ===\n");
-    IO.println("Book titles:   " + bookService.countDefinitions());
-    IO.println("Book items:    " + bookService.countItems());
-    IO.println("Users:         " + userService.count());
-    IO.println("Active loans:  " + loanService.count());
-    IO.println("Overdue loans: " + loanService.getOverdue().size());
   }
 
   // --- Permissions / Roles menus (stubs for future expansion) ---

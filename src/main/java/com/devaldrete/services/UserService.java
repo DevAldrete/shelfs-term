@@ -1,7 +1,6 @@
 package com.devaldrete.services;
 
 import java.util.List;
-import java.util.UUID;
 
 import com.devaldrete.domain.Administrator;
 import com.devaldrete.domain.Member;
@@ -11,19 +10,31 @@ import com.devaldrete.repositories.UserRepository;
 
 public class UserService {
 
-  private UserRepository userRepository;
+  private final UserRepository userRepository;
+
+  public UserService() {
+    this.userRepository = new UserRepository();
+  }
 
   public UserService(UserRepository userRepository) {
     this.userRepository = userRepository;
   }
 
   public User register(String username, String email, String password, Role role) {
-    String id = UUID.randomUUID().toString();
     User user = role == Role.ADMINISTRATOR
-        ? new Administrator(id, username, email, password)
-        : new Member(id, username, email, password);
+        ? new Administrator(username, email, password)
+        : new Member(username, email, password);
     userRepository.save(user);
     return user;
+  }
+
+  /**
+   * Persists a pre-constructed User object directly.
+   * Use this when the caller is responsible for building the entity
+   * (e.g. seeding the default admin, or signup via AuthService).
+   */
+  public void save(User user) {
+    userRepository.save(user);
   }
 
   public List<User> getAll() {
@@ -51,10 +62,15 @@ public class UserService {
     if (user == null || user instanceof Administrator) {
       return false;
     }
+    // Preserve the original ID so the repository can find and replace the record
     Administrator admin = new Administrator(
         user.getId(), user.getUsername(), user.getEmail(), user.getPassword());
     userRepository.update(admin);
     return true;
+  }
+
+  public User findByEmail(String email) {
+    return userRepository.findByEmail(email);
   }
 
   public boolean remove(String id) {

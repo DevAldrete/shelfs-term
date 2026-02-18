@@ -1,11 +1,16 @@
 package com.devaldrete.domain;
 
 import java.util.List;
+import java.util.UUID;
 
 public class Member extends User {
 
   public Member(String id, String username, String email, String password) {
     super(id, username, email, password, Role.MEMBER);
+  }
+
+  public Member(String username, String email, String password) {
+    super(UUID.randomUUID().toString(), username, email, password, Role.MEMBER);
   }
 
   public boolean canViewOwnLoans() {

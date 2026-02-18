@@ -16,12 +16,12 @@ public class LoanService {
   private static final int MAX_LOANS_PER_USER = 2;
   private static final int LOAN_PERIOD_DAYS = 14;
 
-  private LoanRepository loanRepository;
-  private UserService userService;
-  private BookService bookService;
+  private final LoanRepository loanRepository;
+  private final UserService userService;
+  private final BookService bookService;
 
-  public LoanService(LoanRepository loanRepository, UserService userService, BookService bookService) {
-    this.loanRepository = loanRepository;
+  public LoanService(UserService userService, BookService bookService) {
+    this.loanRepository = new LoanRepository();
     this.userService = userService;
     this.bookService = bookService;
   }
@@ -64,6 +64,14 @@ public class LoanService {
     if (loan == null) {
       return false;
     }
+
+    // Restore the book item's status to AVAILABLE
+    BookItem bookItem = bookService.findById(loan.getBookId());
+    if (bookItem != null) {
+      bookItem.setStatus(Status.AVAILABLE);
+      bookService.updateBookItem(bookItem);
+    }
+
     loanRepository.delete(loanId);
     return true;
   }

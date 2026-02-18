@@ -12,10 +12,10 @@ import com.devaldrete.utils.BarcodeGenerator;
 
 public class BookService {
 
-  private BookRepository bookRepository;
+  private final BookRepository bookRepository;
 
-  public BookService(BookRepository bookRepository) {
-    this.bookRepository = bookRepository;
+  public BookService() {
+    this.bookRepository = new BookRepository();
   }
 
   public BookDefinition addBook(String isbn, String title, String author, String publisher) {
@@ -71,6 +71,10 @@ public class BookService {
 
   public BookItem findByBarcode(String barcode) {
     return bookRepository.findByBarcode(barcode);
+  }
+
+  public BookItem findById(String id) {
+    return bookRepository.getById(id);
   }
 
   public boolean updateDefinition(String isbn, String title, String author, String publisher) {
